@@ -1,14 +1,14 @@
-let Rx = require('rx');
-let cp = require("child_process")
-let wincmd = require('node-windows')
-let findDisconnectsCmd = 'net statistics workstation | findstr "^Server disconnects"'
-let results = ''
-let programName = 'TSADO.EXE'
-let startCmd = 'start C:\\Users\\matt\\Desktop\\Touchscreen.lnk';
+var Rx = require('rx');
+var cp = require("child_process")
+var wincmd = require('node-windows')
+var findDisconnectsCmd = 'net statistics workstation | findstr "^Server disconnects"'
+var results = ''
+var programName = 'TSADO.EXE'
+var startCmd = 'start C:\\Users\\matt\\Desktop\\Touchscreen.lnk';
 
-let source = Rx.Observable.create(observer => {
+var source = Rx.Observable.create(function(observer) {
     setInterval(function() {
-        cp.exec(findDisconnectsCmd, (error, stdout, stderr) => {
+        cp.exec(findDisconnectsCmd, function(error, stdout, stderr) {
             observer.onNext(stdout);
         })
     }, 1000);
@@ -16,7 +16,7 @@ let source = Rx.Observable.create(observer => {
     return () => console.log('disposed')
 });
 
-let subscription = source.subscribe(data => {
+var subscription = source.subscribe(function(data) {
     if (results === '') {
         results = data
     } else {
@@ -29,14 +29,14 @@ let subscription = source.subscribe(data => {
 });
 
 function restart() {
-    let running = [];
-    wincmd.list(svc => {
-        svc.filter(x => {
+    var running = [];
+    wincmd.list(function(svc) {
+        svc.filter(function(x) {
                 if (x.ImageName === programName) {
                     return x
                 }
             })
-            .map(c => {
+            .map(function(c) {
                 wincmd.kill(c.PID, function() {
                     console.log('Process Killed');
                 })
