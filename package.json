@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "forever": "^0.15.2",
     "node-windows": "^0.1.11",
-    "rx": "^4.1.0"
+    "rx": "^4.1.0",
   }
 }
