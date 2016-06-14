@@ -1,0 +1,15 @@
+{
+  "name": "touchscreen-reconnect",
+  "version": "1.0.0",
+  "description": "Automatically restart data collection terminals when network connection is lost",
+  "main": "touchscreen.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-windows": "^0.1.11",
+    "rx": "^4.1.0"
+  }
+}
