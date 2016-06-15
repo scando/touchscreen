@@ -53,7 +53,8 @@ function launch() {
 							launch();
 						}, 1000);
         } else {
-            console.log('Process restarted');
+            var date = new Date();
+            console.log('Process restarted at ' + date);
         }
     })
 }
