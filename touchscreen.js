@@ -12,6 +12,7 @@ var killCmd = 'taskkill /F /T /IM ' + programName
 var startCmd = 'start C:\\Users\\' + userName + '\\Desktop\\Touchscreen.lnk'
 var results = ''
 var i = 1
+var restarted = false
 
 var source = Rx.Observable.create(function(observer) {
     var output = 'failed'
@@ -29,21 +30,14 @@ var source = Rx.Observable.create(function(observer) {
                 }
             }
         })
-        wincmd.list(function(svc) {
-            var res = svc.filter(function(x) {
-                if (x.ImageName === programName) {
-                    return x
-                }
-            })
-            res.map(function(v) {
-                if (v.Status === 'Not Responding') {
-                    observer.onNext({
-                        status: output,
-                        details: 'Program not responding'
-                    })
-                }
-            })
-        }, true)
+        if (restarted == true) {
+            setTimeout(function() {
+                list()
+                restarted = false
+            }, 30000);
+        } else {
+            list()
+        }
     }, 2000)
 })
 
@@ -60,6 +54,24 @@ var kill = function() {
     })
 }
 
+function list() {
+    return wincmd.list(function(svc) {
+        var res = svc.filter(function(x) {
+            if (x.ImageName === programName) {
+                return x
+            }
+        })
+        res.map(function(v) {
+            if (v.Status === 'Not Responding') {
+                observer.onNext({
+                    status: output,
+                    details: 'Program not responding'
+                })
+            }
+        })
+    }, true)
+}
+
 function launch() {
     cp.exec(startCmd, function(error, stdout, stderr) {
         if (error) {
@@ -69,6 +81,7 @@ function launch() {
                 launch()
             }, 2000)
         } else {
+            restarted = true
             var date = new Date()
             console.log(programName + ' restarted at ' + date)
             i = 1
