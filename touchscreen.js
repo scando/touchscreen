@@ -39,6 +39,24 @@ var source = Rx.Observable.create(function(observer) {
             list()
         }
     }, 2000)
+
+    function list() {
+        return wincmd.list(function(svc) {
+            var res = svc.filter(function(x) {
+                if (x.ImageName === programName) {
+                    return x
+                }
+            })
+            res.map(function(v) {
+                if (v.Status === 'Not Responding') {
+                    observer.onNext({
+                        status: output,
+                        details: 'Program not responding'
+                    })
+                }
+            })
+        }, true)
+    }
 })
 
 var kill = function() {
@@ -52,24 +70,6 @@ var kill = function() {
             }
         })
     })
-}
-
-function list() {
-    return wincmd.list(function(svc) {
-        var res = svc.filter(function(x) {
-            if (x.ImageName === programName) {
-                return x
-            }
-        })
-        res.map(function(v) {
-            if (v.Status === 'Not Responding') {
-                observer.onNext({
-                    status: output,
-                    details: 'Program not responding'
-                })
-            }
-        })
-    }, true)
 }
 
 function launch() {
