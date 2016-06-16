@@ -1,67 +1,76 @@
 // Core Node modules
 var path = require('path')
 var cp = require('child_process')
+var fs = require('fs')
     // NPM installed modules
 var Rx = require('rx')
 var wincmd = require('node-windows')
     // Project variables
+var logPath = '\\\\occws0.olympic.com\\Public\\Logs\\Touchscreen.txt'
 var userName = process.env['USERPROFILE'].split(path.sep)[2]
+var computerName = process.env.COMPUTERNAME
 var findDisconnectsCmd = 'net statistics workstation | findstr "^Server disconnects"'
 var programName = 'TSADO.EXE'
 var killCmd = 'taskkill /F /T /IM ' + programName
+// var startCmdTest = 'start \\\\occe2.olympic.com\\Blswin32\\Source\\TSADO.EXE'
 var startCmd = 'start C:\\Users\\' + userName + '\\Desktop\\Touchscreen.lnk'
 var results = ''
 var i = 1
-var restarted = false
+var recentRestart = false
+var failOutput = 'failed'
+var timeout
+var tryingToRestart = false
 
-var source = Rx.Observable.create(function(observer) {
-    var output = 'failed'
+var source = Rx.Observable.create(runCheck)
+
+function runCheck(observer) {
     setInterval(function() {
-        cp.exec(findDisconnectsCmd, function(error, stdout, stderr) {
-            if (results === '') {
-                results = stdout
-            } else {
-                if (stdout != results) {
-                    results = stdout
-                    observer.onNext({
-                        status: output,
-                        details: 'New drop detected'
-                    })
-                }
-            }
-        })
-        if (restarted == true) {
-            setTimeout(function() {
-                list()
-                restarted = false
-            }, 30000);
-        } else {
-            list()
+        checkDisconnects(observer)
+        if (recentRestart == false && tryingToRestart == false) {
+            checkResponse(observer)
         }
-    }, 2000)
+    }, 1000);
+}
 
-    function list() {
-        return wincmd.list(function(svc) {
-            var res = svc.filter(function(x) {
+function checkDisconnects(observer) {
+    cp.exec(findDisconnectsCmd, function(error, stdout, stderr) {
+        console.log('Check for disconnects')
+        if (results === '') {
+            results = stdout
+        } else {
+            if (stdout != results) {
+                results = stdout
+                observer.onNext({
+                    status: failOutput,
+                    details: 'New drop detected'
+                })
+            }
+        }
+    })
+}
+
+function checkResponse(observer) {
+    return wincmd.list(function(svc) {
+        console.log('Check for response')
+        var res = svc.filter(function(x) {
                 if (x.ImageName === programName) {
                     return x
                 }
             })
-            res.map(function(v) {
+            .map(function(v) {
                 if (v.Status === 'Not Responding') {
                     observer.onNext({
-                        status: output,
+                        status: failOutput,
                         details: 'Program not responding'
                     })
                 }
             })
-        }, true)
-    }
-})
+    }, true)
+}
 
-var kill = function() {
+var kill = function(cmd) {
     return new Promise(function(resolve, reject) {
-        cp.exec(killCmd, function(error, stdout, stderr) {
+        cp.exec(cmd, function(error, stdout, stderr) {
             if (error) {
                 console.log('Error:', error)
             } else {
@@ -73,17 +82,25 @@ var kill = function() {
 }
 
 function launch() {
+    tryingToRestart = true
     cp.exec(startCmd, function(error, stdout, stderr) {
         if (error) {
+            clearTimeout(timeout)
             console.log('Reconnection attempt ' + i + ' - Failed')
             i++
             setTimeout(function() {
                 launch()
             }, 2000)
         } else {
-            restarted = true
+            tryingToRestart = false
+            recentRestart = true
+            clearTimeout(timeout)
+            timeout = setTimeout(function() {
+                recentRestart = false
+            }, 30000);
             var date = new Date()
             console.log(programName + ' restarted at ' + date)
+            log(date)
             i = 1
         }
     })
@@ -92,10 +109,22 @@ function launch() {
 var subscription = source.subscribe(function(data) {
     if (data.status === 'failed') {
         console.log(data.details)
-        kill().then(function() {
+        kill(killCmd).then(function() {
             launch()
         }).catch(function(error) {
             console.log('ERROR', error)
         })
     }
 })
+
+function log(date) {
+    var data = 'COMPUTER: ' + computerName + ' USER: ' + userName + ' RESTARTED: ' + date
+    var newLine = '\r\n'
+    fs.appendFile(logPath, data+newLine, function(error) {
+        if (error) {
+            console.error("write error:  " + error.message)
+        } else {
+            console.log("Successful logged to " + logPath)
+        }
+    })
+}
