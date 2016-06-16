@@ -34,7 +34,6 @@ function runCheck(observer) {
 
 function checkDisconnects(observer) {
     cp.exec(findDisconnectsCmd, function(error, stdout, stderr) {
-        console.log('Check for disconnects')
         if (results === '') {
             results = stdout
         } else {
@@ -51,7 +50,6 @@ function checkDisconnects(observer) {
 
 function checkResponse(observer) {
     return wincmd.list(function(svc) {
-        console.log('Check for response')
         var res = svc.filter(function(x) {
                 if (x.ImageName === programName) {
                     return x
