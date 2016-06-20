@@ -76,14 +76,10 @@ function checkResponse(observer) {
 var kill = function(cmd) {
     return new Promise(function(resolve, reject) {
         cp.exec(cmd, function(error, stdout, stderr) {
-            if (error) {
-                console.log('Error:', error)
-            } else {
                 console.log(pad + programName + ' killed successfully')
                 resolve()
-            }
+            })
         })
-    })
 }
 
 function launch() {
