@@ -20,8 +20,8 @@ var recentRestart = false
 var failOutput = 'failed'
 var timeout
 var tryingToRestart = false
-var pad = '~~~~~'
-var longPad = '====================================================='
+var pad = '====='
+var longPad = '=====================================================\n====================================================='
 var mon = '\nEverything looks good. Monitoring '+programName+'...\n'
 
 var source = Rx.Observable.create(runCheck)
