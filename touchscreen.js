@@ -12,7 +12,7 @@ var computerName = process.env.COMPUTERNAME
 var findDisconnectsCmd = 'net statistics workstation | findstr "^Server disconnects"'
 var programName = 'TSADO.EXE'
 var killCmd = 'taskkill /F /T /IM ' + programName
-// var startCmdTest = 'start \\\\occe2.olympic.com\\Blswin32\\Source\\TSADO.EXE'
+    // var startCmdTest = 'start \\\\occe2.olympic.com\\Blswin32\\Source\\TSADO.EXE'
 var startCmd = 'start C:\\Users\\' + userName + '\\Desktop\\Touchscreen.lnk'
 var results = ''
 var i = 1
@@ -20,12 +20,19 @@ var recentRestart = false
 var failOutput = 'failed'
 var timeout
 var tryingToRestart = false
+var pad = '~~~~~'
+var longPad = '====================================================='
+var mon = '\nEverything looks good. Monitoring '+programName+'...\n'
 
 var source = Rx.Observable.create(runCheck)
 
+console.log(mon);
+
 function runCheck(observer) {
     setInterval(function() {
-        checkDisconnects(observer)
+        if (tryingToRestart == false) {
+            checkDisconnects(observer)
+        }
         if (recentRestart == false && tryingToRestart == false) {
             checkResponse(observer)
         }
@@ -41,7 +48,7 @@ function checkDisconnects(observer) {
                 results = stdout
                 observer.onNext({
                     status: failOutput,
-                    details: 'New drop detected'
+                    details: 'NEW DROP DETECTED'
                 })
             }
         }
@@ -59,7 +66,7 @@ function checkResponse(observer) {
                 if (v.Status === 'Not Responding') {
                     observer.onNext({
                         status: failOutput,
-                        details: 'Program not responding'
+                        details: 'PROGRAM NOT RESPONDING'
                     })
                 }
             })
@@ -72,7 +79,7 @@ var kill = function(cmd) {
             if (error) {
                 console.log('Error:', error)
             } else {
-                console.log(stdout)
+                console.log(pad + programName + ' killed successfully')
                 resolve()
             }
         })
@@ -80,11 +87,14 @@ var kill = function(cmd) {
 }
 
 function launch() {
+    if (tryingToRestart == false) {
+        console.log(pad + 'Attempting to restart ' + programName + '...');
+    }
     tryingToRestart = true
     cp.exec(startCmd, function(error, stdout, stderr) {
         if (error) {
             clearTimeout(timeout)
-            console.log('Reconnection attempt ' + i + ' - Failed')
+            console.log(pad + 'Restart attempt ' + i + ' - Failed')
             i++
             setTimeout(function() {
                 launch()
@@ -97,7 +107,7 @@ function launch() {
                 recentRestart = false
             }, 30000);
             var date = new Date()
-            console.log(programName + ' restarted at ' + date)
+            console.log(pad + programName + ' restarted at ' + date)
             log(date)
             i = 1
         }
@@ -106,7 +116,8 @@ function launch() {
 
 var subscription = source.subscribe(function(data) {
     if (data.status === 'failed') {
-        console.log(data.details)
+        var date = new Date()
+        console.log(longPad + '\n' + pad + data.details + ' at ' + date)
         kill(killCmd).then(function() {
             launch()
         }).catch(function(error) {
@@ -118,11 +129,11 @@ var subscription = source.subscribe(function(data) {
 function log(date) {
     var data = 'COMPUTER: ' + computerName + ' USER: ' + userName + ' RESTARTED: ' + date
     var newLine = '\r\n'
-    fs.appendFile(logPath, data+newLine, function(error) {
+    fs.appendFile(logPath, data + newLine, function(error) {
         if (error) {
-            console.error("write error:  " + error.message)
+            console.error(pad+"Log error:  " + error.message+ '\n' + mon)
         } else {
-            console.log("Successful logged to " + logPath)
+            console.log(longPad + '\n' + mon)
         }
     })
 }
