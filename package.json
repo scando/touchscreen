@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "figlet": "^1.1.2",
     "forever": "^0.15.2",
     "node-windows": "^0.1.11",
     "promise": "^7.1.1",

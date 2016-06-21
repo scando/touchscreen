@@ -5,6 +5,7 @@ var fs = require('fs')
     // NPM installed modules
 var Rx = require('rx')
 var wincmd = require('node-windows')
+var figlet = require('figlet')
     // Project variables
 var logPath = '\\\\occws0.olympic.com\\Public\\Logs\\Touchscreen.txt'
 var userName = process.env['USERPROFILE'].split(path.sep)[2]
@@ -26,7 +27,11 @@ var mon = '\nEverything looks good. Monitoring '+programName+'...\n'
 
 var source = Rx.Observable.create(runCheck)
 
-console.log(mon);
+figlet('Olympic\nControls\nCorp.', function(err, data) {
+    console.log(data)
+    console.log(mon)
+});
+
 
 function runCheck(observer) {
     setInterval(function() {
